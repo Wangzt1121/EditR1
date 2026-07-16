@@ -8,7 +8,7 @@
 examples/train_kontext_gemini.sh
 ```
 
-这个仓库上传的是轻量版：包含代码、50 个任务的 rubric、必要 metadata、以及每个任务 1 张测试图。仓库不包含完整训练集、模型权重、LoRA checkpoint、训练日志或生成结果。
+这个仓库上传的是轻量版：包含代码、01-51 任务的 rubric、必要 metadata、以及 01-50 每个任务 1 张测试图。仓库不包含完整训练集、模型权重、LoRA checkpoint、训练日志或生成结果。
 
 ## 仓库结构
 
@@ -26,7 +26,7 @@ examples/train_kontext_gemini.sh
 │   ├── test_gemini.py                   # rubric 解析、打分聚合、failure propagation
 │   ├── test_gemini_reward.py            # 训练时调用 Gemini reward 的入口
 │   └── gemini_schema_v2_rejudge*.py     # Gemini 结构化评分辅助代码
-├── rubrics/                             # 50 个任务的 YAML 打分规则
+├── rubrics/                             # 01-51 任务的 YAML 打分规则
 ├── metadata/
 │   ├── test_metadata_50_one_each.jsonl  # 50 个任务各 1 张图的测试 metadata
 │   └── test_metadata_*.jsonl            # 其他小规模固定测试 metadata
@@ -164,7 +164,7 @@ export LORA_PATH=
 
 ## 最小训练命令
 
-下面是一个 4 卡训练例子：默认训练全部 01-50 任务，每个 source prompt 采样 8 张候选图，采样步数 20，CFG 为 1.25。
+下面是一个 4 卡训练例子：默认不额外过滤 metadata 中的任务，每个 source prompt 采样 8 张候选图，采样步数 20，CFG 为 1.25。
 
 ```bash
 cd /path/to/EditR1
@@ -282,6 +282,7 @@ reward 代码会根据 metadata 里的 `category` / `rubric_key` 自动匹配 YA
 01_hair_edit  -> rubrics/01_头发编辑.yaml
 02_beard      -> rubrics/02_胡须.yaml
 03_lipstick   -> rubrics/03_口红.yaml
+51_body_fullbody_edit -> rubrics/51_姿态.yaml
 ```
 
 现在的 rubric 是 0-9 整数 L3 score vector 逻辑，且包含 failure propagation。训练日志里常见字段：
@@ -298,7 +299,7 @@ failure_tags=...
 
 ## 任务范围
 
-当前仓库默认训练全部 01-50 任务，不需要手动指定任务编号。保持下面这个变量为空即可：
+当前仓库默认不额外过滤任务；实际训练任务由 `PROMPT_METADATA_FILE` 里的 metadata 决定。当前 rubric 目录支持 01-51，其中仓库自带固定 eval metadata 仍是 01-50。
 
 ```bash
 export EDIT_R1_TASK_PREFIXES=
@@ -306,13 +307,13 @@ export EDIT_R1_TASK_PREFIXES=
 
 如果你不设置这个变量，`examples/train_kontext_gemini.sh` 也会默认使用全部任务。
 
-注意：如果 `NUM_GROUPS_PER_EPOCH=2`，每个 epoch 只会从全部任务池里抽 2 个 source prompt group，不代表每轮都会覆盖 50 个任务。
+注意：如果 `NUM_GROUPS_PER_EPOCH=2`，每个 epoch 只会从 metadata 任务池里抽 2 个 source prompt group，不代表每轮都会覆盖全部任务。
 
 ## 常用训练参数
 
 | 变量 | 含义 | 常用值 |
 | --- | --- | --- |
-| `EDIT_R1_TASK_PREFIXES` | 任务前缀过滤；留空表示全部 01-50 任务 | 留空 |
+| `EDIT_R1_TASK_PREFIXES` | 任务前缀过滤；留空表示不额外过滤 metadata 中的任务 | 留空 |
 | `NUM_EPOCHS` | 训练轮数 | `10` |
 | `NUM_GROUPS_PER_EPOCH` | 每轮采样多少个 source prompt group | `2` |
 | `SINGLE_NUM_CANDIDATES` | 每个 source prompt 采样多少张候选图 | `8` |

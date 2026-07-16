@@ -645,6 +645,12 @@ def mllm_single_api_score(device):
             "03_lipstick": "03_口红.yaml",
             "03_lipstick_edit": "03_口红.yaml",
             "lipstick_edit": "03_口红.yaml",
+            "51": "51_姿态.yaml",
+            "51_body_fullbody_edit": "51_姿态.yaml",
+            "body_fullbody_edit": "51_姿态.yaml",
+            "body_pose_change": "51_姿态.yaml",
+            "身体/全身编辑": "51_姿态.yaml",
+            "姿态": "51_姿态.yaml",
         }
         for token in tokens:
             normalized = str(token).strip().lower().replace(" ", "_")
@@ -666,10 +672,10 @@ def mllm_single_api_score(device):
                     return str(by_stem[candidate])
 
         for token in tokens:
-            match = re.match(r"^(\d{1,2})(?:[_\\-].*)?$", token)
+            match = re.match(r"^(\d{1,3})(?:[_\\-].*)?$", token)
             if not match:
                 continue
-            prefix = f"{int(match.group(1)):02d}_"
+            prefix = f"{match.group(1)}_"
             matches = [path for path in rubric_files if path.name.startswith(prefix)]
             if len(matches) == 1:
                 return str(matches[0])

@@ -1,0 +1,252 @@
+task_key: 51_body_fullbody_edit
+task_title: Body and Full-Body Editing
+task_title_zh: 姿态 / 身体全身编辑
+version: v51_fixed_integer_22_l3_body_fullbody_edit_failureprop_integer_0to9
+language: English
+judge_role: You are a strict expert evaluator for human body, full-body, pose, clothing-structure, viewpoint, lighting,
+  localized body-region, and scene-consistent image editing.
+judge_instructions: 'Strictly compare SOURCE, EDIT PROMPT, and EDITED IMAGE.
+
+  Task target: perform only the body, full-body, pose, clothing, viewpoint, lighting, background, accessory, or localized
+  body-region change explicitly requested by the prompt. Preserve identity, face, hairstyle, body proportions, hands,
+  limbs, clothing details, background, lighting, camera angle, and all non-target regions unless the prompt explicitly
+  requests changing them.
+
+  Before returning JSON, privately run this judging protocol. Do not output private notes; use them only to produce the
+  final score_vector.
+
+  1) Task-state card. Classify the candidate as clean_success, minor_flaws_success, partial_success, no_visible_edit,
+  under_edited, wrong_direction, wrong_region, wrong_operation, substitute_edit, correct_but_non_target_changed,
+  correct_but_artifact, artifact_driven, or unusable. Identify the requested operation, actual visible edit, target
+  region, and any changed non-target regions.
+
+  2) Defect-first scoring. For every active L3 facet, first decide the visible defect level: none, tiny, minor, clear,
+  major, severe, absent_or_reversed, or unusable. Then choose the integer score. 7 is not a default score; it means
+  strong evidence with only a minor flaw.
+
+  Score calibration:
+  - 9 = essentially exact, rare, clean positive evidence.
+  - 8 = near-exact with only a tiny local issue.
+  - 7 = strong but visibly imperfect.
+  - 6 = mostly correct with one clear issue.
+  - 4-5 = partial, mediocre, or mixed evidence.
+  - 2-3 = weak attempt with major visible failure.
+  - 0-1 = absent, reversed, wrong-region, unrelated, or unusable.
+
+  3) Failure propagation. Apply global_scoring_policy.failure_propagation after raw facet scoring. If the requested edit
+  is absent, wrong, wrong-region, or mainly substituted by another operation, cap every affected L3 facet by the
+  corresponding severity cap. Good preservation, clean background, or photorealism must not compensate for missing or
+  wrong target editing.
+
+  4) Preservation tradeoff. A high-quality result requires prompt following and preservation at the same time. Good target
+  editing cannot compensate for obvious identity, face, body, clothing, scene, lighting, or camera drift outside the
+  requested scope; perfect preservation cannot compensate for a missing or wrong edit.
+
+  5) Flat-vector review. Privately rescore if all scores are 7, 14+ scores are 7, 18+ scores are identical, all scores
+  are 7-9, or visible defects exist but no affected score is below 7.
+
+  Return only JSON:
+  {"score_vector":[22 integers from 0 to 9],"failure_tags":[]}
+  '
+target_region: The body, full-body pose, limbs, torso, clothing structure, viewpoint, lighting, background, accessory, or
+  localized body-related region explicitly requested by the prompt.
+target_action_summary: Execute the prompt-specified body or full-body edit while preserving all non-target identity,
+  face, hair, body, clothing, scene, lighting, and camera attributes unless explicitly requested.
+design_principle:
+  summary: Use exactly 22 fixed L3 scores. Separate prompt compliance, physical/anatomical integration, subject
+    preservation, localization, and visual quality. Do not reward a visually attractive result when it misses the requested
+    body/full-body operation or damages protected regions.
+  constraints:
+  - Exactly 22 L3 facets and exactly 22 integer scores.
+  - Every score must be an integer from 0 to 9.
+  - Return all 22 scores in active_l3 order.
+  - Compare source image, prompt, and edited image directly.
+  - Judge only visible evidence.
+  - Do not reward camera, style, beautification, face, hair, makeup, or background changes as a substitute for the requested
+    body/full-body operation unless the prompt explicitly requests them.
+global_scoring_policy:
+  score_type: integer
+  allowed_scores: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  instruction: Return one independent integer score for every active_l3 item in order. Score each facet from visible
+    evidence in SOURCE, EDIT PROMPT, and EDITED IMAGE.
+  output_order_rule: The score_vector must contain exactly 22 integers in active_l3 order; never reorder, omit, rename, or
+    add facets.
+  failure_propagation:
+    absent_or_wrong_primary_edit:
+      trigger: The requested body/full-body edit is absent, reversed, mostly unchanged, unrelated, or replaced by a different
+        operation.
+      cap: 3
+      affected_l1: [Prompt Compliance, Anatomical and Physical Integration, Localization and Boundary Control,
+        Task Realism and Image Quality]
+    wrong_region_or_scope:
+      trigger: The visible edit is applied to the wrong body region or spreads outside the requested scope.
+      cap: 4
+      affected_l1: [Prompt Compliance, Localization and Boundary Control, Subject and Non-target Preservation]
+    identity_or_face_drift:
+      trigger: Identity, face shape, facial features, expression, gaze, or visible head identity changes when not requested.
+      cap: 4
+      affected_l1: [Subject and Non-target Preservation, Task Realism and Image Quality]
+    body_anatomy_or_pose_break:
+      trigger: Limbs, hands, torso, joints, body proportions, pose, or clothing-body interaction become implausible.
+      cap: 4
+      affected_l1: [Anatomical and Physical Integration, Task Realism and Image Quality]
+    global_scene_or_camera_drift:
+      trigger: Background, lighting, camera angle, framing, subject scale, or global color changes when not requested.
+      cap: 5
+      affected_l1: [Subject and Non-target Preservation, Task Realism and Image Quality]
+l1_weights:
+  Prompt Compliance: 0.35
+  Anatomical and Physical Integration: 0.20
+  Subject and Non-target Preservation: 0.25
+  Localization and Boundary Control: 0.10
+  Task Realism and Image Quality: 0.10
+facet_weights_within_l1:
+  Prompt Compliance:
+    body_fullbody_requested_operation_match: 1.2
+    body_fullbody_target_region_match: 1.0
+    body_fullbody_requested_attribute_coverage: 1.0
+    body_fullbody_strength_direction_match: 0.9
+    body_fullbody_no_wrong_substitute_edit: 1.0
+    body_fullbody_prompt_preservation_constraints_followed: 0.9
+  Anatomical and Physical Integration:
+    body_fullbody_pose_limb_joint_plausibility: 1.2
+    body_fullbody_clothing_deformation_consistency: 1.0
+    body_fullbody_viewpoint_perspective_consistency: 1.0
+    body_fullbody_occlusion_shadow_contact_realism: 1.0
+    body_fullbody_scale_proportion_balance: 1.0
+  Subject and Non-target Preservation:
+    body_fullbody_identity_face_preserved: 1.2
+    body_fullbody_unrequested_body_parts_preserved: 1.0
+    body_fullbody_hair_makeup_accessories_preserved: 0.8
+    body_fullbody_clothing_identity_preserved_unless_target: 1.0
+    body_fullbody_background_scene_preserved_unless_target: 1.0
+  Localization and Boundary Control:
+    body_fullbody_edit_localized_to_requested_scope: 1.2
+    body_fullbody_boundary_blending_clean: 1.0
+    body_fullbody_no_leakage_to_face_or_background: 1.0
+  Task Realism and Image Quality:
+    body_fullbody_texture_material_realism: 1.0
+    body_fullbody_lighting_color_consistency: 1.0
+    body_fullbody_artifact_blur_distortion_control: 1.2
+active_l3:
+- body_fullbody_requested_operation_match
+- body_fullbody_target_region_match
+- body_fullbody_requested_attribute_coverage
+- body_fullbody_strength_direction_match
+- body_fullbody_no_wrong_substitute_edit
+- body_fullbody_prompt_preservation_constraints_followed
+- body_fullbody_pose_limb_joint_plausibility
+- body_fullbody_clothing_deformation_consistency
+- body_fullbody_viewpoint_perspective_consistency
+- body_fullbody_occlusion_shadow_contact_realism
+- body_fullbody_scale_proportion_balance
+- body_fullbody_identity_face_preserved
+- body_fullbody_unrequested_body_parts_preserved
+- body_fullbody_hair_makeup_accessories_preserved
+- body_fullbody_clothing_identity_preserved_unless_target
+- body_fullbody_background_scene_preserved_unless_target
+- body_fullbody_edit_localized_to_requested_scope
+- body_fullbody_boundary_blending_clean
+- body_fullbody_no_leakage_to_face_or_background
+- body_fullbody_texture_material_realism
+- body_fullbody_lighting_color_consistency
+- body_fullbody_artifact_blur_distortion_control
+taxonomy:
+  Prompt Compliance:
+    Requested Body / Full-Body Operation:
+      body_fullbody_requested_operation_match:
+        title: Requested operation match
+        definition: The edited image performs the specific body, full-body, pose, clothing-structure, viewpoint, lighting,
+          background, accessory, or localized body-region operation requested by the prompt.
+      body_fullbody_target_region_match:
+        title: Target region match
+        definition: The edit affects the intended region, such as pose, torso, limbs, hands, feet, clothing, camera/viewpoint,
+          lighting, background, accessory, or another body-related target named by the prompt.
+      body_fullbody_requested_attribute_coverage:
+        title: Requested attributes covered
+        definition: The explicit prompt details such as direction, color, material, shape, pose, garment type, lighting
+          style, camera angle, folds, contact, or strength are visibly represented.
+      body_fullbody_strength_direction_match:
+        title: Strength and direction match
+        definition: The edit is strong enough to satisfy the prompt, follows the requested direction, and is not excessive,
+          reversed, caricatured, or too weak.
+      body_fullbody_no_wrong_substitute_edit:
+        title: No wrong substitute edit
+        definition: The visible result is not mainly a different operation such as generic beautification, face editing,
+          hair editing, random clothing change, style transfer, or background change unless explicitly requested.
+      body_fullbody_prompt_preservation_constraints_followed:
+        title: Prompt preservation constraints followed
+        definition: Regions and attributes that the prompt asks to preserve remain source-consistent while the requested
+          body/full-body edit is applied.
+  Anatomical and Physical Integration:
+    Body Plausibility and Physical Coherence:
+      body_fullbody_pose_limb_joint_plausibility:
+        title: Pose, limb, and joint plausibility
+        definition: Body pose, limbs, hands, fingers, torso, legs, feet, and visible joints remain anatomically plausible
+          after the edit.
+      body_fullbody_clothing_deformation_consistency:
+        title: Clothing deformation consistency
+        definition: Clothing, fabric folds, garment boundaries, and body-clothing interaction adapt naturally to the
+          requested edit without broken seams or impossible fabric behavior.
+      body_fullbody_viewpoint_perspective_consistency:
+        title: Viewpoint and perspective consistency
+        definition: Camera angle, body scale, perspective, foreshortening, and scene geometry are coherent with the source
+          and with any explicitly requested viewpoint change.
+      body_fullbody_occlusion_shadow_contact_realism:
+        title: Occlusion, shadow, and contact realism
+        definition: Contacts between body parts, clothing, accessories, ground, props, and background have plausible
+          occlusion, shadows, highlights, and support.
+      body_fullbody_scale_proportion_balance:
+        title: Scale and proportion balance
+        definition: Body proportions, head-to-body scale, limb length, shoulder/hip/torso relation, and subject framing
+          remain natural unless the prompt explicitly requests a proportional change.
+  Subject and Non-target Preservation:
+    Identity and Non-target Stability:
+      body_fullbody_identity_face_preserved:
+        title: Identity and face preserved
+        definition: The person remains the same individual; face shape, facial features, expression, gaze, and visible head
+          identity do not drift unless explicitly requested.
+      body_fullbody_unrequested_body_parts_preserved:
+        title: Unrequested body parts preserved
+        definition: Body parts, pose details, hands, limbs, skin, and silhouette not targeted by the prompt remain close to
+          the source.
+      body_fullbody_hair_makeup_accessories_preserved:
+        title: Hair, makeup, and accessories preserved
+        definition: Hair, hairline, makeup, facial hair, jewelry, glasses, and accessories remain unchanged unless they are
+          the explicit target or must minimally adapt to contact.
+      body_fullbody_clothing_identity_preserved_unless_target:
+        title: Clothing identity preserved unless target
+        definition: Clothing design, color, texture, patterns, logos, and garment identity remain source-consistent except
+          for the explicitly requested clothing or body-contact edit.
+      body_fullbody_background_scene_preserved_unless_target:
+        title: Background and scene preserved unless target
+        definition: Background structure, scene layout, lighting, camera angle, resolution, and global color remain
+          unchanged unless the prompt explicitly requests a scene, lighting, or viewpoint change.
+  Localization and Boundary Control:
+    Target Localization and Clean Boundaries:
+      body_fullbody_edit_localized_to_requested_scope:
+        title: Edit localized to requested scope
+        definition: The edit is confined to the intended body/full-body region or explicitly requested global style region
+          and does not unnecessarily alter protected areas.
+      body_fullbody_boundary_blending_clean:
+        title: Boundary blending clean
+        definition: Boundaries around limbs, clothing, hair, accessories, body contours, ground contact, and edited regions
+          are clean, coherent, and naturally blended.
+      body_fullbody_no_leakage_to_face_or_background:
+        title: No leakage to face or background
+        definition: The edit does not leak into face, skin, hair, background, clothing, or scene regions that should remain
+          preserved.
+  Task Realism and Image Quality:
+    Rendering and Artifact Control:
+      body_fullbody_texture_material_realism:
+        title: Texture and material realism
+        definition: Skin, fabric, hair, accessories, shadows, highlights, reflections, and scene materials remain realistic
+          and compatible with the source.
+      body_fullbody_lighting_color_consistency:
+        title: Lighting and color consistency
+        definition: Lighting, exposure, color temperature, contrast, saturation, and shadows are consistent with the source
+          unless explicitly requested to change.
+      body_fullbody_artifact_blur_distortion_control:
+        title: Artifact, blur, and distortion control
+        definition: The result avoids blur, over-smoothing, duplicated or broken structures, warped anatomy, jagged edges,
+          melted textures, resolution loss, and obvious generation artifacts.
