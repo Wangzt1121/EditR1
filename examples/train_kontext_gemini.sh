@@ -122,7 +122,7 @@ export WANDB_MODE=${WANDB_MODE:-offline}
 #   EDIT_R1_TASK_PREFIXES: 可选任务前缀过滤；为空表示不额外过滤。
 export DATASET_ROOT=/nvmedata/workspace2/users/wzt/dataset
 export PROMPT_METADATA_FILE=/nvmedata/workspace2/users/wzt/dataset/data/train_metadata.jsonl
-export EVAL_PROMPT_METADATA_FILE=${EVAL_PROMPT_METADATA_FILE:-/nvmedata/workspace2/users/wzt/Prehuman/metadata/test_metadata_01_one_image.jsonl}
+export EVAL_PROMPT_METADATA_FILE=${EVAL_PROMPT_METADATA_FILE:-${PROJECT_ROOT}/metadata/test_metadata_50_one_each.jsonl}
 export EDIT_R1_TASK_PREFIXES=${EDIT_R1_TASK_PREFIXES:-01,02,03}
 
 # 图像画布与训练分辨率：
