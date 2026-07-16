@@ -37,6 +37,44 @@ BASE_TEST_PATH = Path(
 ).expanduser()
 
 
+def _retry_forever_enabled(max_retries: int) -> bool:
+    return int(max_retries) <= 0
+
+
+def _retry_attempts(max_retries: int):
+    attempt = 1
+    while _retry_forever_enabled(max_retries) or attempt <= int(max_retries):
+        yield attempt
+        attempt += 1
+
+
+def _has_retry_left(max_retries: int, attempt: int) -> bool:
+    return _retry_forever_enabled(max_retries) or attempt < int(max_retries)
+
+
+def _retry_sleep_seconds(attempt: int) -> float:
+    try:
+        base = float(os.getenv("SINGLE_REWARD_RETRY_SLEEP_BASE", "2"))
+    except Exception:
+        base = 2.0
+    try:
+        cap = float(os.getenv("SINGLE_REWARD_RETRY_SLEEP_MAX", "60"))
+    except Exception:
+        cap = 60.0
+    return max(0.0, min(cap, base * max(1, attempt)))
+
+
+def _sleep_before_retry(context: str, attempt: int, max_retries: int, error: Optional[Exception]) -> None:
+    delay = _retry_sleep_seconds(attempt)
+    total = "inf" if _retry_forever_enabled(max_retries) else str(max_retries)
+    print(
+        f"[gemini_native][retry] {context} attempt {attempt}/{total} failed: {error!r}; "
+        f"retrying in {delay:.1f}s",
+        flush=True,
+    )
+    time.sleep(delay)
+
+
 def _data_url_to_gemini_inline_part(data_url: str) -> Dict[str, Any]:
     header, encoded = str(data_url).split(",", 1)
     mime = "image/jpeg"
@@ -258,7 +296,7 @@ Return only JSON matching the schema.
             )
 
         last_err: Optional[Exception] = None
-        for attempt in range(1, max_retries + 1):
+        for attempt in _retry_attempts(max_retries):
             try:
                 req = urllib.request.Request(
                     url,
@@ -281,20 +319,20 @@ Return only JSON matching the schema.
             except urllib.error.HTTPError as err:
                 body = err.read().decode("utf-8", errors="replace")[:4000]
                 last_err = RuntimeError(f"Gemini native HTTP {err.code}: {body}")
-                if err.code in {400, 401, 403, 404}:
+                if err.code in {400, 401, 403, 404} and not _retry_forever_enabled(max_retries):
                     raise last_err
-                if attempt < max_retries:
-                    time.sleep(2 * attempt)
-                else:
-                    raise last_err
+                if _has_retry_left(max_retries, attempt):
+                    _sleep_before_retry("judge", attempt, max_retries, last_err)
+                    continue
+                raise last_err
             except Exception as err:
                 last_err = err
-                if attempt < max_retries:
-                    time.sleep(2 * attempt)
-                else:
-                    raise RuntimeError(
-                        f"Gemini native judge failed after {max_retries} attempts: {last_err}"
-                    ) from err
+                if _has_retry_left(max_retries, attempt):
+                    _sleep_before_retry("judge", attempt, max_retries, last_err)
+                    continue
+                raise RuntimeError(
+                    f"Gemini native judge failed after {max_retries} attempts: {last_err}"
+                ) from err
 
         raise RuntimeError(f"Unexpected Gemini native judge failure: {last_err}")
 

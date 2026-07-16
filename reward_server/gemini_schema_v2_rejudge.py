@@ -44,6 +44,44 @@ def load_base_module(repo_root: Path):
     return module
 
 
+def retry_forever_enabled(max_retries: int) -> bool:
+    return int(max_retries) <= 0
+
+
+def retry_attempts(max_retries: int):
+    attempt = 1
+    while retry_forever_enabled(max_retries) or attempt <= int(max_retries):
+        yield attempt
+        attempt += 1
+
+
+def has_retry_left(max_retries: int, attempt: int) -> bool:
+    return retry_forever_enabled(max_retries) or attempt < int(max_retries)
+
+
+def retry_sleep_seconds(attempt: int) -> float:
+    try:
+        base = float(os.getenv("SINGLE_REWARD_RETRY_SLEEP_BASE", "2"))
+    except Exception:
+        base = 2.0
+    try:
+        cap = float(os.getenv("SINGLE_REWARD_RETRY_SLEEP_MAX", "60"))
+    except Exception:
+        cap = 60.0
+    return max(0.0, min(cap, base * max(1, attempt)))
+
+
+def sleep_before_retry(context: str, attempt: int, max_retries: int, error: Optional[Exception]) -> None:
+    delay = retry_sleep_seconds(attempt)
+    total = "inf" if retry_forever_enabled(max_retries) else str(max_retries)
+    print(
+        f"[schema_v2][retry] {context} attempt {attempt}/{total} failed: {error!r}; "
+        f"retrying in {delay:.1f}s",
+        flush=True,
+    )
+    time.sleep(delay)
+
+
 def facet_slot_key(index: int) -> str:
     return f"facet_{index:03d}"
 
@@ -337,7 +375,7 @@ Return only JSON matching the schema. The facet_scores object must contain every
 
     url = gemini_generate_url(model, base_url)
     last_err: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
+    for attempt in retry_attempts(max_retries):
         try:
             req = urllib.request.Request(
                 url,
@@ -356,12 +394,12 @@ Return only JSON matching the schema. The facet_scores object must contain every
         except urllib.error.HTTPError as err:
             body = err.read().decode("utf-8", errors="replace")[:4000]
             last_err = RuntimeError(f"Gemini HTTP {err.code}: {body}")
-            if err.code in {400, 401, 403, 404}:
+            if err.code in {400, 401, 403, 404} and not retry_forever_enabled(max_retries):
                 raise last_err
         except Exception as err:
             last_err = err
-        if attempt < max_retries:
-            time.sleep(2 * attempt)
+        if has_retry_left(max_retries, attempt):
+            sleep_before_retry("Gemini schema-v2 judge", attempt, max_retries, last_err)
     raise RuntimeError(f"Gemini schema-v2 judge failed after {max_retries} attempts: {last_err!r}")
 
 
@@ -765,7 +803,7 @@ Return only JSON matching the schema. The facet_scores object must contain every
     }
     url = gemini_generate_url(model, base_url)
     last_err: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
+    for attempt in retry_attempts(max_retries):
         try:
             req = urllib.request.Request(
                 url,
@@ -784,12 +822,12 @@ Return only JSON matching the schema. The facet_scores object must contain every
         except urllib.error.HTTPError as err:
             body = err.read().decode("utf-8", errors="replace")[:4000]
             last_err = RuntimeError(f"Gemini HTTP {err.code}: {body}")
-            if err.code in {400, 401, 403, 404}:
+            if err.code in {400, 401, 403, 404} and not retry_forever_enabled(max_retries):
                 raise last_err
         except Exception as err:
             last_err = err
-        if attempt < max_retries:
-            time.sleep(2 * attempt)
+        if has_retry_left(max_retries, attempt):
+            sleep_before_retry("Gemini v13 judge", attempt, max_retries, last_err)
     raise RuntimeError(f"Gemini v13 judge failed after {max_retries} attempts: {last_err!r}")
 
 
@@ -1167,7 +1205,7 @@ Return only JSON. The score_vector must contain exactly {len(active_l3)} integer
     }
     url = gemini_generate_url(model, base_url)
     last_err: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
+    for attempt in retry_attempts(max_retries):
         try:
             req = urllib.request.Request(
                 url,
@@ -1186,12 +1224,12 @@ Return only JSON. The score_vector must contain exactly {len(active_l3)} integer
         except urllib.error.HTTPError as err:
             body = err.read().decode("utf-8", errors="replace")[:4000]
             last_err = RuntimeError(f"Gemini HTTP {err.code}: {body}")
-            if err.code in {400, 401, 403, 404}:
+            if err.code in {400, 401, 403, 404} and not retry_forever_enabled(max_retries):
                 raise last_err
         except Exception as err:
             last_err = err
-        if attempt < max_retries:
-            time.sleep(2 * attempt)
+        if has_retry_left(max_retries, attempt):
+            sleep_before_retry("Gemini v18 integer judge", attempt, max_retries, last_err)
     raise RuntimeError(f"Gemini v18 integer judge failed after {max_retries} attempts: {last_err!r}")
 
 
@@ -1637,7 +1675,7 @@ Return only JSON. The scores array must contain exactly {len(active_l3)} integer
     }
     url = gemini_generate_url(model, base_url)
     last_err: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
+    for attempt in retry_attempts(max_retries):
         try:
             req = urllib.request.Request(
                 url,
@@ -1656,12 +1694,12 @@ Return only JSON. The scores array must contain exactly {len(active_l3)} integer
         except urllib.error.HTTPError as err:
             body = err.read().decode("utf-8", errors="replace")[:4000]
             last_err = RuntimeError(f"Gemini HTTP {err.code}: {body}")
-            if err.code in {400, 401, 403, 404}:
+            if err.code in {400, 401, 403, 404} and not retry_forever_enabled(max_retries):
                 raise last_err
         except Exception as err:
             last_err = err
-        if attempt < max_retries:
-            time.sleep(2 * attempt)
+        if has_retry_left(max_retries, attempt):
+            sleep_before_retry("Gemini v22 dynamic integer judge", attempt, max_retries, last_err)
     raise RuntimeError(f"Gemini v22 dynamic integer judge failed after {max_retries} attempts: {last_err!r}")
 
 
@@ -1833,7 +1871,12 @@ def main() -> None:
     parser.add_argument("--base_url", default=os.getenv("GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"))
     parser.add_argument("--api_key", default=os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", os.getenv("SINGLE_REWARD_API_KEY", ""))))
     parser.add_argument("--request_timeout", type=float, default=float(os.getenv("SINGLE_REWARD_TIMEOUT", "240")))
-    parser.add_argument("--max_retries", type=int, default=int(os.getenv("SINGLE_REWARD_MAX_RETRIES", "3")))
+    parser.add_argument(
+        "--max_retries",
+        type=int,
+        default=int(os.getenv("SINGLE_REWARD_MAX_RETRIES", "0")),
+        help="Maximum Gemini retry attempts. Use 0 or a negative value to retry forever until success.",
+    )
     parser.add_argument("--max_image_side", type=int, default=int(os.getenv("SINGLE_REWARD_MAX_IMAGE_SIDE", "512")))
     parser.add_argument("--jpeg_quality", type=int, default=int(os.getenv("SINGLE_REWARD_JPEG_QUALITY", "90")))
     parser.add_argument("--limit", type=int, default=0, help="Optional number of candidates to score for quick tests.")
@@ -1844,7 +1887,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--fail_open",
-        default=os.getenv("GEMINI_SCHEMA_V2_FAIL_OPEN", "1"),
+        default=os.getenv("GEMINI_SCHEMA_V2_FAIL_OPEN", "0"),
         help="If true, keep saving rows when one candidate fails.",
     )
     args = parser.parse_args()

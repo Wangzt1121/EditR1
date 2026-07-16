@@ -472,8 +472,8 @@ def mllm_single_api_score(device):
         os.getenv("RUBRIC_YAML", "/nvmedata/workspace2/users/wzt/Hang/face_rubrics"),
     ).strip()
     request_timeout = float(os.getenv("SINGLE_REWARD_TIMEOUT", os.getenv("GPT_RUBRIC_TIMEOUT", "90")))
-    max_retries = int(os.getenv("SINGLE_REWARD_MAX_RETRIES", "3"))
-    deadline_seconds = float(os.getenv("SINGLE_REWARD_DEADLINE_SECONDS", "120"))
+    max_retries = int(os.getenv("SINGLE_REWARD_MAX_RETRIES", "0"))
+    deadline_seconds = float(os.getenv("SINGLE_REWARD_DEADLINE_SECONDS", "0"))
     max_image_side = int(os.getenv("SINGLE_REWARD_MAX_IMAGE_SIDE", "1024"))
     jpeg_quality = int(os.getenv("SINGLE_REWARD_JPEG_QUALITY", "90"))
     workers = int(os.getenv("SINGLE_REWARD_WORKERS", "2"))
@@ -488,12 +488,20 @@ def mllm_single_api_score(device):
     debug_limit = int(os.getenv("SINGLE_REWARD_DEBUG_LIMIT", "3"))
     debug_state = {"printed": 0}
     native_gemini = os.getenv("SINGLE_REWARD_NATIVE_GEMINI", os.getenv("GEMINI_NATIVE_API", "0")).strip().lower() in {"1", "true", "yes", "y"}
+    if max_retries <= 0 and not fail_open and deadline_seconds > 0:
+        print(
+            "[mllm_single_api_score] SINGLE_REWARD_MAX_RETRIES<=0 and fail_open=0; "
+            "disabling SINGLE_REWARD_DEADLINE_SECONDS so API retries can continue until success.",
+            flush=True,
+        )
+        deadline_seconds = 0.0
 
     print(
         "[mllm_single_api_score] "
         f"model={model} base_url={base_url} rubric_root={rubric_yaml} "
         f"workers={workers} max_image_side={max_image_side} jpeg_quality={jpeg_quality} "
-        f"api_lock={use_api_lock} api_channels={api_channels} native_gemini={native_gemini}"
+        f"max_retries={max_retries} deadline_seconds={deadline_seconds} "
+        f"fail_open={fail_open} api_lock={use_api_lock} api_channels={api_channels} native_gemini={native_gemini}"
     )
 
     def _to_pil_image(image):

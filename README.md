@@ -322,6 +322,8 @@ export EDIT_R1_TASK_PREFIXES=
 | `SAMPLE_GUIDANCE_SCALE` | CFG / guidance scale | `1.25` |
 | `SINGLE_REWARD_WORKERS` | 本地 reward worker 数 | `8` |
 | `SINGLE_REWARD_API_CHANNELS` | API 并发通道数 | `8` |
+| `SINGLE_REWARD_MAX_RETRIES` | API 最大重试次数，`0` 表示一直重试直到成功 | `0` |
+| `SINGLE_REWARD_DEADLINE_SECONDS` | reward batch 总等待上限，`0` 表示不设上限 | `0` |
 | `SINGLE_REWARD_FAIL_OPEN` | API 失败后是否用 fallback 分数继续 | 推荐 `0` |
 | `MAX_EVAL_BATCHES` | 限制 eval batch 数，`0` 表示完整 eval | `0` |
 
