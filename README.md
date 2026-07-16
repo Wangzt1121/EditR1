@@ -281,8 +281,8 @@ reward 代码会根据 metadata 里的 `category` / `rubric_key` 自动匹配 YA
 
 ```text
 01_hair_edit  -> rubrics/01_头发编辑.yaml
-02_beard      -> rubrics/02_胡须_敲定版本.yaml
-03_lipstick   -> rubrics/03_口红_成功版本.yaml
+02_beard      -> rubrics/02_胡须.yaml
+03_lipstick   -> rubrics/03_口红.yaml
 ```
 
 现在的 rubric 是 0-9 整数 L3 score vector 逻辑，且包含 failure propagation。训练日志里常见字段：

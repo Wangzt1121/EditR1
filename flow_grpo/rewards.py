@@ -629,14 +629,14 @@ def mllm_single_api_score(device):
             "01_hair": "01_头发编辑.yaml",
             "01_hair_edit": "01_头发编辑.yaml",
             "hair_edit": "01_头发编辑.yaml",
-            "02": "02_胡须_敲定版本.yaml",
-            "02_beard": "02_胡须_敲定版本.yaml",
-            "02_beard_edit": "02_胡须_敲定版本.yaml",
-            "beard_edit": "02_胡须_敲定版本.yaml",
-            "03": "03_口红_成功版本.yaml",
-            "03_lipstick": "03_口红_成功版本.yaml",
-            "03_lipstick_edit": "03_口红_成功版本.yaml",
-            "lipstick_edit": "03_口红_成功版本.yaml",
+            "02": "02_胡须.yaml",
+            "02_beard": "02_胡须.yaml",
+            "02_beard_edit": "02_胡须.yaml",
+            "beard_edit": "02_胡须.yaml",
+            "03": "03_口红.yaml",
+            "03_lipstick": "03_口红.yaml",
+            "03_lipstick_edit": "03_口红.yaml",
+            "lipstick_edit": "03_口红.yaml",
         }
         for token in tokens:
             normalized = str(token).strip().lower().replace(" ", "_")

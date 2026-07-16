@@ -2018,7 +2018,7 @@ def main() -> None:
         raise ValueError(
             "This cleaned Gemini rejudge entry only supports fixed-integer active_l3 rubrics. "
             "Please use a fixed-integer rubric such as rubrics/01_*.yaml, wzt.yaml, "
-            "wzt1.yaml, or wzt_beard_stubble_strict.yaml."
+            "another task-specific YAML under rubrics/."
         )
     rubric = load_v18_integer_rubric(str(rubric_yaml))
     # integer_v18 = True  # old branch flag no longer needed in the clean path
