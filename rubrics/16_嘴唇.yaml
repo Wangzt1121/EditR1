@@ -255,7 +255,7 @@ active_l3:
 - bilateral_balance_when_expected
 - same_person_identity
 - facial_features_preserved
-- lip_texture_boundary_realistic
+- lip_anatomy_rendering_realistic
 - target_texture_realistic
 - color_light_integration
 - no_obvious_artifacts
@@ -316,7 +316,7 @@ facet_weights_within_l1:
     same_person_identity: 0.8
     facial_features_preserved: 0.2
   Task Realism and Image Quality:
-    lip_texture_boundary_realistic: 0.28
+    lip_anatomy_rendering_realistic: 0.28
     target_texture_realistic: 0.26
     color_light_integration: 0.24
     no_obvious_artifacts: 0.22
@@ -662,9 +662,9 @@ taxonomy:
           9: The facet is fully satisfied with concrete visual evidence and no visible defect.
   Task Realism and Image Quality:
     Rendering Realism and Artifacts:
-      lip_texture_boundary_realistic:
-        title: Lip texture and boundary realistic
-        definition: Judge lip texture and boundary realistic for Lip Edit. Compare the source image, edit prompt, and edited
+      lip_anatomy_rendering_realistic:
+        title: Lip anatomy rendering realistic
+        definition: Judge lip anatomy rendering realistic for Lip Edit. Compare the source image, edit prompt, and edited
           image. A high score requires prompt-faithful satisfaction inside upper lip, lower lip, cupid bow, lip corners, vermilion
           border, inner mouth boundary, teeth when visible, and surrounding skin, natural integration, and no unrelated change.
           A low score is required when this facet is missing, reversed, applied to the wrong area, excessive, weak, anatomically

@@ -347,7 +347,7 @@ active_l3:
 - boundary_blends_naturally
 - same_person_identity
 - facial_features_preserved
-- gaze_iris_pupil_preserved_eye
+- eye_optics_anatomy_realistic
 - target_texture_realistic
 - color_light_integration
 - no_obvious_artifacts
@@ -408,7 +408,7 @@ facet_weights_within_l1:
     same_person_identity: 0.8
     facial_features_preserved: 0.2
   Task Realism and Image Quality:
-    gaze_iris_pupil_preserved_eye: 0.28
+    eye_optics_anatomy_realistic: 0.28
     target_texture_realistic: 0.26
     color_light_integration: 0.24
     no_obvious_artifacts: 0.22
@@ -754,9 +754,9 @@ taxonomy:
           9: The facet is fully satisfied with concrete visual evidence and no visible defect.
   Task Realism and Image Quality:
     Rendering Realism and Artifacts:
-      gaze_iris_pupil_preserved_eye:
-        title: Gaze, iris, and pupil preserved
-        definition: Judge gaze, iris, and pupil preserved for Eye Beautification. Compare the source image, edit prompt, and
+      eye_optics_anatomy_realistic:
+        title: Eye optics and anatomy realistic
+        definition: Judge eye optics and anatomy realistic for Eye Beautification. Compare the source image, edit prompt, and
           edited image. A high score requires prompt-faithful satisfaction inside eyes, eyelids, eye corners, iris and pupil
           appearance, lashes, under-eye area, brows near the eyes, and surrounding skin texture, natural integration, and
           no unrelated change. A low score is required when this facet is missing, reversed, applied to the wrong area, excessive,

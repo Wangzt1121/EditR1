@@ -250,12 +250,12 @@ active_l3:
 - forehead_size_skin_preserved_hairline
 - hairline_boundary_blend
 - edit_confined_to_target_region
-- hairline_boundary_blend
+- hairline_local_boundary_blend
 - head_pose_scale_preserved_hairline
 - boundary_blends_naturally
 - same_person_identity
 - facial_features_preserved
-- hairline_density_roots_babyhair_realistic
+- hair_roots_texture_realistic
 - target_texture_realistic
 - color_light_integration
 - no_obvious_artifacts
@@ -309,14 +309,14 @@ facet_weights_within_l1:
     hairline_boundary_blend: 0.07
   Localization and Anatomical Integration:
     edit_confined_to_target_region: 0.28
-    hairline_boundary_blend: 0.28
+    hairline_local_boundary_blend: 0.28
     head_pose_scale_preserved_hairline: 0.22
     boundary_blends_naturally: 0.22
   Subject Preservation:
     same_person_identity: 0.8
     facial_features_preserved: 0.2
   Task Realism and Image Quality:
-    hairline_density_roots_babyhair_realistic: 0.28
+    hair_roots_texture_realistic: 0.28
     target_texture_realistic: 0.26
     color_light_integration: 0.24
     no_obvious_artifacts: 0.22
@@ -568,9 +568,9 @@ taxonomy:
           7: The facet is strong, with only a minor visible flaw.
           8: The facet is near-perfect, with only a tiny local imperfection.
           9: The facet is fully satisfied with concrete visual evidence and no visible defect.
-      hairline_boundary_blend:
-        title: Hairline boundary blend
-        definition: Judge hairline boundary blend for Hairline Edit. Compare the source image, edit prompt, and edited image.
+      hairline_local_boundary_blend:
+        title: Hairline local boundary blend
+        definition: Judge hairline local boundary blend for Hairline Edit. Compare the source image, edit prompt, and edited image.
           A high score requires prompt-faithful satisfaction inside front hairline, temples, forehead boundary, baby hairs,
           side hairline, hair roots, scalp-skin transition, and upper face boundary, natural integration, and no unrelated
           change. A low score is required when this facet is missing, reversed, applied to the wrong area, excessive, weak,
@@ -662,9 +662,9 @@ taxonomy:
           9: The facet is fully satisfied with concrete visual evidence and no visible defect.
   Task Realism and Image Quality:
     Rendering Realism and Artifacts:
-      hairline_density_roots_babyhair_realistic:
-        title: Hairline density, roots, and baby hair realistic
-        definition: Judge hairline density, roots, and baby hair realistic for Hairline Edit. Compare the source image, edit
+      hair_roots_texture_realistic:
+        title: Hair roots texture realistic
+        definition: Judge hair roots texture realistic for Hairline Edit. Compare the source image, edit
           prompt, and edited image. A high score requires prompt-faithful satisfaction inside front hairline, temples, forehead
           boundary, baby hairs, side hairline, hair roots, scalp-skin transition, and upper face boundary, natural integration,
           and no unrelated change. A low score is required when this facet is missing, reversed, applied to the wrong area,

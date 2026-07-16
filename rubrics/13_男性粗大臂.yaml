@@ -346,7 +346,7 @@ active_l3:
 - bilateral_balance_when_expected
 - same_person_identity
 - body_pose_preserved
-- arm_anatomy_pose_plausible
+- arm_muscle_rendering_realistic
 - target_texture_realistic
 - color_light_integration
 - no_obvious_artifacts
@@ -407,7 +407,7 @@ facet_weights_within_l1:
     same_person_identity: 0.8
     body_pose_preserved: 0.2
   Task Realism and Image Quality:
-    arm_anatomy_pose_plausible: 0.28
+    arm_muscle_rendering_realistic: 0.28
     target_texture_realistic: 0.26
     color_light_integration: 0.24
     no_obvious_artifacts: 0.22
@@ -753,9 +753,9 @@ taxonomy:
           9: The facet is fully satisfied with concrete visual evidence and no visible defect.
   Task Realism and Image Quality:
     Rendering Realism and Artifacts:
-      arm_anatomy_pose_plausible:
-        title: Arm anatomy and pose plausible
-        definition: Judge arm anatomy and pose plausible for Male Arm Bulking. Compare the source image, edit prompt, and
+      arm_muscle_rendering_realistic:
+        title: Arm muscle rendering realistic
+        definition: Judge arm muscle rendering realistic for Male Arm Bulking. Compare the source image, edit prompt, and
           edited image. A high score requires prompt-faithful satisfaction inside male upper arms, biceps, triceps, forearms
           when visible, shoulders, sleeves, cuffs, torso contact, and arm-background boundaries, natural integration, and
           no unrelated change. A low score is required when this facet is missing, reversed, applied to the wrong area, excessive,
