@@ -306,12 +306,6 @@ export EDIT_R1_TASK_PREFIXES=
 
 如果你不设置这个变量，`examples/train_kontext_gemini.sh` 也会默认使用全部任务。
 
-只有在调试时才建议临时筛选任务，例如：
-
-```bash
-export EDIT_R1_TASK_PREFIXES=01,02,03
-```
-
 注意：如果 `NUM_GROUPS_PER_EPOCH=2`，每个 epoch 只会从全部任务池里抽 2 个 source prompt group，不代表每轮都会覆盖 50 个任务。
 
 ## 常用训练参数
