@@ -164,7 +164,7 @@ export LORA_PATH=
 
 ## 最小训练命令
 
-下面是一个 4 卡训练例子：训练 `01,02,03` 三个任务，每个 source prompt 采样 8 张候选图，采样步数 20，CFG 为 1.25。
+下面是一个 4 卡训练例子：默认训练全部 01-50 任务，每个 source prompt 采样 8 张候选图，采样步数 20，CFG 为 1.25。
 
 ```bash
 cd /path/to/EditR1
@@ -184,7 +184,6 @@ export EVAL_PROMPT_METADATA_FILE=/path/to/YOUR_DATASET_ROOT/data/test_metadata.j
 export PRETRAINED_MODEL=/path/to/FLUX.1-Kontext-dev
 export LORA_PATH=/path/to/step-30000.safetensors
 
-export EDIT_R1_TASK_PREFIXES=01,02,03
 export NUM_EPOCHS=10
 export NUM_GROUPS_PER_EPOCH=2
 export SINGLE_NUM_CANDIDATES=8
@@ -199,14 +198,14 @@ bash examples/train_kontext_gemini.sh
 启动后会打印类似信息：
 
 ```text
-[train_kontext] reward_backend=official_gemini_native config=kontext_single_api_reward tasks=01,02,03 reward=mllm_single_api_score model=gemini-3.5-flash ...
+[train_kontext] reward_backend=official_gemini_native config=kontext_single_api_reward tasks=all reward=mllm_single_api_score model=gemini-3.5-flash ...
 ```
 
 这行信息很重要，用来确认：
 
 - 当前 reward backend 是不是 Gemini。
 - 当前 reward model 是不是你想用的模型。
-- 当前训练任务是不是 `01,02,03`。
+- 当前训练任务是不是 `all`，也就是全部任务。
 - 当前 rubric 目录是不是正确。
 
 ## 当前脚本默认值
@@ -297,33 +296,29 @@ failure_tags=...
 
 如果你怀疑某个任务打分不准，优先检查 `reward_details.jsonl` 里的 `rubric_yaml` 是否匹配到了正确文件。
 
-## 选择训练哪些任务
+## 任务范围
 
-只训练头发、胡须、口红：
-
-```bash
-export EDIT_R1_TASK_PREFIXES=01,02,03
-```
-
-训练前五个任务：
-
-```bash
-export EDIT_R1_TASK_PREFIXES=01,02,03,04,05
-```
-
-训练所有任务：
+当前仓库默认训练全部 01-50 任务，不需要手动指定任务编号。保持下面这个变量为空即可：
 
 ```bash
 export EDIT_R1_TASK_PREFIXES=
 ```
 
-注意：如果 `NUM_GROUPS_PER_EPOCH=2`，每个 epoch 只会从任务池里抽 2 个 source prompt group，不代表每轮都会覆盖所有任务。
+如果你不设置这个变量，`examples/train_kontext_gemini.sh` 也会默认使用全部任务。
+
+只有在调试时才建议临时筛选任务，例如：
+
+```bash
+export EDIT_R1_TASK_PREFIXES=01,02,03
+```
+
+注意：如果 `NUM_GROUPS_PER_EPOCH=2`，每个 epoch 只会从全部任务池里抽 2 个 source prompt group，不代表每轮都会覆盖 50 个任务。
 
 ## 常用训练参数
 
 | 变量 | 含义 | 常用值 |
 | --- | --- | --- |
-| `EDIT_R1_TASK_PREFIXES` | 任务前缀过滤，逗号分隔 | `01,02,03` |
+| `EDIT_R1_TASK_PREFIXES` | 任务前缀过滤；留空表示全部 01-50 任务 | 留空 |
 | `NUM_EPOCHS` | 训练轮数 | `10` |
 | `NUM_GROUPS_PER_EPOCH` | 每轮采样多少个 source prompt group | `2` |
 | `SINGLE_NUM_CANDIDATES` | 每个 source prompt 采样多少张候选图 | `8` |

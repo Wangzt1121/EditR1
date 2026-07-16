@@ -123,7 +123,7 @@ export WANDB_MODE=${WANDB_MODE:-offline}
 export DATASET_ROOT=/nvmedata/workspace2/users/wzt/dataset
 export PROMPT_METADATA_FILE=/nvmedata/workspace2/users/wzt/dataset/data/train_metadata.jsonl
 export EVAL_PROMPT_METADATA_FILE=${EVAL_PROMPT_METADATA_FILE:-${PROJECT_ROOT}/metadata/test_metadata_50_one_each.jsonl}
-export EDIT_R1_TASK_PREFIXES=${EDIT_R1_TASK_PREFIXES:-01,02,03}
+export EDIT_R1_TASK_PREFIXES=${EDIT_R1_TASK_PREFIXES:-}
 
 # 图像画布与训练分辨率：
 #   EDIT_R1_PAD_TO_SQUARE: 非正方形输入在送入模型前是否 padding 成正方形。
