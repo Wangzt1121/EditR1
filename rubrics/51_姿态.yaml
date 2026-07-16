@@ -1,7 +1,7 @@
 task_key: 51_body_fullbody_edit
 task_title: Body and Full-Body Editing
 task_title_zh: 姿态 / 身体全身编辑
-version: v51_fixed_integer_22_l3_body_fullbody_edit_failureprop_integer_0to9
+version: v51_fixed_integer_22_l3_body_fullbody_edit_pose_clothing_gate_integer_0to9
 language: English
 judge_role: You are a strict expert evaluator for human body, full-body, pose, clothing-structure, viewpoint, lighting,
   localized body-region, and scene-consistent image editing.
@@ -42,7 +42,13 @@ judge_instructions: 'Strictly compare SOURCE, EDIT PROMPT, and EDITED IMAGE.
   editing cannot compensate for obvious identity, face, body, clothing, scene, lighting, or camera drift outside the
   requested scope; perfect preservation cannot compensate for a missing or wrong edit.
 
-  5) Flat-vector review. Privately rescore if all scores are 7, 14+ scores are 7, 18+ scores are identical, all scores
+  5) Hard pose and clothing-material gates. If the prompt does not explicitly request a pose, viewpoint, limb-position,
+  stance, hand-position, or body-geometry change, then any visible pose/body-position drift must prevent high scores.
+  A plausible but different pose is still a preservation failure. If the prompt does not explicitly request clothing,
+  garment, color, texture, fabric, material, pattern, or accessory change, then clothing material or garment-identity
+  drift must also prevent high scores.
+
+  6) Flat-vector review. Privately rescore if all scores are 7, 14+ scores are 7, 18+ scores are identical, all scores
   are 7-9, or visible defects exist but no affected score is below 7.
 
   Return only JSON:
@@ -64,6 +70,8 @@ design_principle:
   - Judge only visible evidence.
   - Do not reward camera, style, beautification, face, hair, makeup, or background changes as a substitute for the requested
     body/full-body operation unless the prompt explicitly requests them.
+  - Do not reward an unrequested pose, stance, limb-position, viewpoint, clothing-material, garment-style, color, texture,
+    or pattern change as a successful body/full-body edit.
 global_scoring_policy:
   score_type: integer
   allowed_scores: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -86,6 +94,20 @@ global_scoring_policy:
       trigger: Identity, face shape, facial features, expression, gaze, or visible head identity changes when not requested.
       cap: 4
       affected_l1: [Subject and Non-target Preservation, Task Realism and Image Quality]
+    unrequested_pose_or_body_position_drift:
+      trigger: The prompt does not explicitly request pose, stance, limb position, hand position, viewpoint, or body-geometry
+        change, but the candidate visibly changes the subject's pose, body alignment, limb arrangement, gesture, hand/foot
+        placement, torso angle, head-body relation, or full-body silhouette.
+      cap: 3
+      affected_l1: [Prompt Compliance, Anatomical and Physical Integration, Subject and Non-target Preservation,
+        Localization and Boundary Control, Task Realism and Image Quality]
+    unrequested_clothing_material_or_garment_drift:
+      trigger: The prompt does not explicitly request clothing, garment, color, pattern, texture, fabric, material, logo,
+        accessory, or clothing-structure change, but the candidate visibly changes clothing identity, fabric type, material
+        finish, color, pattern, garment shape, sleeve/hem structure, folds, or accessory state.
+      cap: 4
+      affected_l1: [Prompt Compliance, Subject and Non-target Preservation, Localization and Boundary Control,
+        Task Realism and Image Quality]
     body_anatomy_or_pose_break:
       trigger: Limbs, hands, torso, joints, body proportions, pose, or clothing-body interaction become implausible.
       cap: 4
@@ -165,7 +187,8 @@ taxonomy:
       body_fullbody_requested_attribute_coverage:
         title: Requested attributes covered
         definition: The explicit prompt details such as direction, color, material, shape, pose, garment type, lighting
-          style, camera angle, folds, contact, or strength are visibly represented.
+          style, camera angle, folds, contact, or strength are visibly represented. Attributes not requested by the prompt,
+          especially pose, stance, clothing material, garment identity, color, texture, and pattern, should not change.
       body_fullbody_strength_direction_match:
         title: Strength and direction match
         definition: The edit is strong enough to satisfy the prompt, follows the requested direction, and is not excessive,
@@ -177,21 +200,27 @@ taxonomy:
       body_fullbody_prompt_preservation_constraints_followed:
         title: Prompt preservation constraints followed
         definition: Regions and attributes that the prompt asks to preserve remain source-consistent while the requested
-          body/full-body edit is applied.
+          body/full-body edit is applied. Even when the prompt does not explicitly list every protected attribute, pose,
+          stance, limb placement, clothing material, garment identity, color, pattern, texture, face, hair, and background
+          must stay source-consistent unless directly requested.
   Anatomical and Physical Integration:
     Body Plausibility and Physical Coherence:
       body_fullbody_pose_limb_joint_plausibility:
         title: Pose, limb, and joint plausibility
         definition: Body pose, limbs, hands, fingers, torso, legs, feet, and visible joints remain anatomically plausible
-          after the edit.
+          after the edit. If the prompt does not explicitly request a pose or body-position change, the source pose, stance,
+          limb arrangement, hand/foot placement, torso angle, and head-body relation must remain close to the source; a
+          plausible but different pose is still a low-scoring preservation failure.
       body_fullbody_clothing_deformation_consistency:
         title: Clothing deformation consistency
         definition: Clothing, fabric folds, garment boundaries, and body-clothing interaction adapt naturally to the
-          requested edit without broken seams or impossible fabric behavior.
+          requested edit without broken seams or impossible fabric behavior. If clothing material, garment type, color,
+          texture, pattern, or style is not explicitly requested to change, these properties must remain source-consistent.
       body_fullbody_viewpoint_perspective_consistency:
         title: Viewpoint and perspective consistency
         definition: Camera angle, body scale, perspective, foreshortening, and scene geometry are coherent with the source
-          and with any explicitly requested viewpoint change.
+          and with any explicitly requested viewpoint change. If viewpoint or pose is not requested to change, camera angle,
+          body orientation, subject scale, and perspective must remain close to the source.
       body_fullbody_occlusion_shadow_contact_realism:
         title: Occlusion, shadow, and contact realism
         definition: Contacts between body parts, clothing, accessories, ground, props, and background have plausible
@@ -208,8 +237,9 @@ taxonomy:
           identity do not drift unless explicitly requested.
       body_fullbody_unrequested_body_parts_preserved:
         title: Unrequested body parts preserved
-        definition: Body parts, pose details, hands, limbs, skin, and silhouette not targeted by the prompt remain close to
-          the source.
+        definition: Body parts, pose details, stance, hand/foot placement, limb arrangement, torso angle, skin, and silhouette
+          not targeted by the prompt remain close to the source. Any unrequested pose or body-position change should score
+          low even if the new pose looks realistic.
       body_fullbody_hair_makeup_accessories_preserved:
         title: Hair, makeup, and accessories preserved
         definition: Hair, hairline, makeup, facial hair, jewelry, glasses, and accessories remain unchanged unless they are
@@ -217,7 +247,9 @@ taxonomy:
       body_fullbody_clothing_identity_preserved_unless_target:
         title: Clothing identity preserved unless target
         definition: Clothing design, color, texture, patterns, logos, and garment identity remain source-consistent except
-          for the explicitly requested clothing or body-contact edit.
+          for the explicitly requested clothing or body-contact edit. Unrequested changes to fabric material, material finish,
+          garment type, sleeve/hem structure, folds, color, pattern, logos, or accessory state should score low and should
+          not be treated as successful body editing.
       body_fullbody_background_scene_preserved_unless_target:
         title: Background and scene preserved unless target
         definition: Background structure, scene layout, lighting, camera angle, resolution, and global color remain
@@ -241,7 +273,8 @@ taxonomy:
       body_fullbody_texture_material_realism:
         title: Texture and material realism
         definition: Skin, fabric, hair, accessories, shadows, highlights, reflections, and scene materials remain realistic
-          and compatible with the source.
+          and compatible with the source. Unrequested material changes, especially clothing fabric, gloss, weave, transparency,
+          thickness, color, or pattern changes, are realism and preservation failures even if they are rendered cleanly.
       body_fullbody_lighting_color_consistency:
         title: Lighting and color consistency
         definition: Lighting, exposure, color temperature, contrast, saturation, and shadows are consistent with the source
